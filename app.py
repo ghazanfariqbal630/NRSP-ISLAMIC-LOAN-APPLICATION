@@ -19,18 +19,21 @@ class LoanApplication(db.Model):
     name = db.Column(db.String(150), nullable=False)
     cnic = db.Column(db.String(15), nullable=False)
     address = db.Column(db.String(250), nullable=False)
-    district = db.Column(db.String(50), nullable=False)  # ✅ Naya column
-    tehsil = db.Column(db.String(50), nullable=False)    # ✅ Naya column
+    district = db.Column(db.String(50), nullable=False)
+    tehsil = db.Column(db.String(50), nullable=False)
     amount = db.Column(db.Float, nullable=False)
     purpose = db.Column(db.String(50), nullable=False)
     contact = db.Column(db.String(15), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-# Create tables - YE AUTOMATICALLY COLUMNS ADD KAR DEGA
+# Create tables - YEH AUTOMATICALLY NAYE COLUMNS BANAYEGA
 with app.app_context():
-    db.create_all()
-    print("✅ Database tables created/updated successfully!")
-    print("✅ District and Tehsil columns added automatically!")
+    try:
+        db.create_all()
+        print("✅ Database tables created successfully!")
+        print("✅ District and Tehsil columns added!")
+    except Exception as e:
+        print(f"❌ Database error: {e}")
 
 # ---------------- Simple Login System ----------------
 USERNAME = "admin"
@@ -63,8 +66,8 @@ def form():
                 name=request.form['name'],
                 cnic=request.form['cnic'],
                 address=request.form['address'],
-                district=request.form['district'],  # ✅ Naya field
-                tehsil=request.form['tehsil'],      # ✅ Naya field
+                district=request.form['district'],
+                tehsil=request.form['tehsil'],
                 amount=float(request.form['amount']),
                 purpose=request.form['purpose'],
                 contact=request.form['contact']
@@ -97,8 +100,8 @@ def dashboard():
             (LoanApplication.name.ilike(f"%{search}%")) |
             (LoanApplication.cnic.ilike(f"%{search}%")) |
             (LoanApplication.purpose.ilike(f"%{search}%")) |
-            (LoanApplication.district.ilike(f"%{search}%")) |  # ✅ Naya search
-            (LoanApplication.tehsil.ilike(f"%{search}%"))      # ✅ Naya search
+            (LoanApplication.district.ilike(f"%{search}%")) |
+            (LoanApplication.tehsil.ilike(f"%{search}%"))
         )
 
     # 📅 Date Filter
@@ -153,8 +156,8 @@ def download_excel():
         "Name": r.name,
         "CNIC": r.cnic,
         "Address": r.address,
-        "District": r.district,      # ✅ Naya column
-        "Tehsil": r.tehsil,          # ✅ Naya column
+        "District": r.district,
+        "Tehsil": r.tehsil,
         "Amount": r.amount,
         "Purpose": r.purpose,
         "Contact": r.contact,
