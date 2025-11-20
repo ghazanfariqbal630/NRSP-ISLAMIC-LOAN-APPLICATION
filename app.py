@@ -116,14 +116,7 @@
         padding: 10px;
     
       }
-
-<style>
-body {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-}
-</style>
-
-      
+ 
       .container {
         padding: 0;
       }
