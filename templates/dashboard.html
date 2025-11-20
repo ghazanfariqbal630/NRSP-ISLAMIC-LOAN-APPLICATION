@@ -552,6 +552,13 @@
                 size: 16,
                 weight: 'bold'
               }
+            },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  return `${context.dataset.label}: ${context.parsed.y}`;
+                }
+              }
             }
           },
           scales: {
@@ -590,7 +597,9 @@
       purposeChart = new Chart(purposeCtx, {
         type: 'doughnut',
         data: {
-          labels: purposeData.labels,
+          labels: purposeData.labels.map((label, index) => {
+            return `${label} (${purposeData.counts[index]})`;
+          }),
           datasets: [{
             label: 'درخواستیں',
             data: purposeData.counts,
@@ -615,7 +624,9 @@
                   size: 12,
                   family: 'Arial'
                 },
-                padding: 20
+                padding: 20,
+                usePointStyle: true,
+                pointStyle: 'circle'
               }
             },
             title: {
@@ -626,6 +637,17 @@
                 size: 16,
                 weight: 'bold'
               }
+            },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  const label = context.label || '';
+                  const value = context.parsed;
+                  const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                  const percentage = Math.round((value / total) * 100);
+                  return `${label.split(' (')[0]}: ${value} (${percentage}%)`;
+                }
+              }
             }
           },
           elements: {
@@ -634,6 +656,34 @@
             }
           }
         }
+      });
+
+      // Add count labels to district chart bars
+      addCountLabelsToBars();
+    }
+
+    // Add count labels on top of bars in district chart
+    function addCountLabelsToBars() {
+      const chartInstance = districtChart;
+      const ctx = chartInstance.ctx;
+      
+      chartInstance.data.datasets.forEach((dataset, datasetIndex) => {
+        const meta = chartInstance.getDatasetMeta(datasetIndex);
+        
+        meta.data.forEach((bar, index) => {
+          const data = dataset.data[index];
+          if (data > 0) {
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 14px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'bottom';
+            
+            const x = bar.x;
+            const y = bar.y - 5;
+            
+            ctx.fillText(data, x, y);
+          }
+        });
       });
     }
 
@@ -684,13 +734,20 @@
       const districtData = calculateDistrictData();
       const purposeData = calculatePurposeData();
       
+      // Update district chart
       districtChart.data.labels = districtData.labels;
       districtChart.data.datasets[0].data = districtData.counts;
       districtChart.update();
       
-      purposeChart.data.labels = purposeData.labels;
+      // Update purpose chart with counts in labels
+      purposeChart.data.labels = purposeData.labels.map((label, index) => {
+        return `${label} (${purposeData.counts[index]})`;
+      });
       purposeChart.data.datasets[0].data = purposeData.counts;
       purposeChart.update();
+      
+      // Add count labels to bars after update
+      setTimeout(addCountLabelsToBars, 100);
     }
 
     // District Filter Functionality
