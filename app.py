@@ -11,7 +11,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 
-# Temporary Model - موجودہ ڈیٹا بیس کے مطابق
+# Database Model - District aur Tehsil ke bina
 class LoanApplication(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(150), nullable=False)
@@ -53,7 +53,6 @@ def logout():
 def form():
     if request.method == "POST":
         try:
-            # Temporary: District aur Tehsil ko skip karein
             new_app = LoanApplication(
                 name=request.form['name'],
                 cnic=request.form['cnic'],
@@ -98,7 +97,7 @@ def dashboard():
     ).count()
 
     return render_template(
-        "dashboard_simple.html",  # Naya template banayein
+        "dashboard.html",  # ✅ اصل dashboard.html استعمال کریں
         records=records,
         total=total,
         total_amount=total_amount,
