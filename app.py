@@ -6,22 +6,17 @@ import os
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your_secret_key_here'
-
-# ✅ PostgreSQL Connection (Render Environment)
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get("DATABASE_URL")
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 
-# ---------------- Database Model ----------------
+# Temporary Model - موجودہ ڈیٹا بیس کے مطابق
 class LoanApplication(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(150), nullable=False)
     cnic = db.Column(db.String(15), nullable=False)
     address = db.Column(db.String(250), nullable=False)
-    # Temporary: Make these columns nullable until database is updated
-    district = db.Column(db.String(50), nullable=True)
-    tehsil = db.Column(db.String(50), nullable=True)
     amount = db.Column(db.Float, nullable=False)
     purpose = db.Column(db.String(50), nullable=False)
     contact = db.Column(db.String(15), nullable=False)
@@ -58,12 +53,11 @@ def logout():
 def form():
     if request.method == "POST":
         try:
+            # Temporary: District aur Tehsil ko skip karein
             new_app = LoanApplication(
                 name=request.form['name'],
                 cnic=request.form['cnic'],
                 address=request.form['address'],
-                district=request.form.get('district', 'N/A'),  # Use get for safety
-                tehsil=request.form.get('tehsil', 'N/A'),      # Use get for safety
                 amount=float(request.form['amount']),
                 purpose=request.form['purpose'],
                 contact=request.form['contact']
@@ -77,7 +71,7 @@ def form():
             return redirect("/")
     return render_template("form.html")
 
-# ---------------- Dashboard with Filters, Search, Chart ----------------
+# ---------------- Dashboard ----------------
 @app.route("/dashboard", methods=["GET"])
 def dashboard():
     if not session.get("logged_in"):
@@ -85,24 +79,14 @@ def dashboard():
         return redirect("/login")
 
     search = request.args.get('search', '')
-    start_date = request.args.get('start_date', '')
-    end_date = request.args.get('end_date', '')
-
     query = LoanApplication.query
 
-    # 🔍 Search Filter
     if search:
         query = query.filter(
             (LoanApplication.name.ilike(f"%{search}%")) |
             (LoanApplication.cnic.ilike(f"%{search}%")) |
-            (LoanApplication.purpose.ilike(f"%{search}%")) |
-            (LoanApplication.district.ilike(f"%{search}%")) |
-            (LoanApplication.tehsil.ilike(f"%{search}%"))
+            (LoanApplication.purpose.ilike(f"%{search}%"))
         )
-
-    # 📅 Date Filter
-    if start_date and end_date:
-        query = query.filter(LoanApplication.created_at.between(start_date, end_date))
 
     records = query.order_by(LoanApplication.created_at.desc()).all()
 
@@ -113,26 +97,14 @@ def dashboard():
         db.func.date(LoanApplication.created_at) == datetime.utcnow().date()
     ).count()
 
-    # 📊 Purpose-wise Data for Chart
-    purpose_data = db.session.query(
-        LoanApplication.purpose, db.func.count(LoanApplication.id)
-    ).group_by(LoanApplication.purpose).all()
-
-    purpose_labels = [p[0] for p in purpose_data]
-    purpose_counts = [p[1] for p in purpose_data]
-
     return render_template(
-        "dashboard.html",
+        "dashboard_simple.html",  # Naya template banayein
         records=records,
         total=total,
         total_amount=total_amount,
         avg_amount=avg_amount,
         today_count=today_count,
-        purpose_labels=purpose_labels,
-        purpose_counts=purpose_counts,
-        search=search,
-        start_date=start_date,
-        end_date=end_date
+        search=search
     )
 
 # ---------------- Download Excel ----------------
@@ -152,8 +124,6 @@ def download_excel():
         "Name": r.name,
         "CNIC": r.cnic,
         "Address": r.address,
-        "District": r.district or 'N/A',
-        "Tehsil": r.tehsil or 'N/A',
         "Amount": r.amount,
         "Purpose": r.purpose,
         "Contact": r.contact,
