@@ -114,8 +114,15 @@
     @media (max-width: 768px) {
       body {
         padding: 10px;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    
       }
+
+<style>
+body {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+</style>
+
       
       .container {
         padding: 0;
