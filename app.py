@@ -91,6 +91,7 @@ def dashboard():
     search = request.args.get('search', '')
     start_date = request.args.get('start_date', '')
     end_date = request.args.get('end_date', '')
+    district_filter = request.args.get('district', '')
 
     query = LoanApplication.query
 
@@ -104,6 +105,10 @@ def dashboard():
             (LoanApplication.tehsil.ilike(f"%{search}%"))
         )
 
+    # 🗺️ District Filter
+    if district_filter and district_filter != 'all':
+        query = query.filter(LoanApplication.district == district_filter)
+
     # 📅 Date Filter
     if start_date and end_date:
         query = query.filter(LoanApplication.created_at.between(start_date, end_date))
@@ -113,9 +118,22 @@ def dashboard():
     total = len(records)
     total_amount = sum(r.amount for r in records) if records else 0
     avg_amount = total_amount / total if total > 0 else 0
+    
+    # Today's count (without current filters)
     today_count = LoanApplication.query.filter(
         db.func.date(LoanApplication.created_at) == datetime.utcnow().date()
     ).count()
+
+    # 📊 District-wise Data for Cards and Charts
+    district_stats = {}
+    district_data = db.session.query(
+        LoanApplication.district, 
+        db.func.count(LoanApplication.id)
+    ).group_by(LoanApplication.district).all()
+    
+    for district, count in district_data:
+        if district:  # Only include if district is not None
+            district_stats[district] = count
 
     # 📊 Purpose-wise Data for Chart
     purpose_data = db.session.query(
@@ -132,11 +150,13 @@ def dashboard():
         total_amount=total_amount,
         avg_amount=avg_amount,
         today_count=today_count,
+        district_stats=district_stats,
         purpose_labels=purpose_labels,
         purpose_counts=purpose_counts,
         search=search,
         start_date=start_date,
-        end_date=end_date
+        end_date=end_date,
+        current_district=district_filter
     )
 
 # ---------------- Download Excel ----------------
@@ -146,7 +166,27 @@ def download_excel():
         flash("براہ کرم لاگ ان کریں!", "warning")
         return redirect("/login")
 
-    records = LoanApplication.query.order_by(LoanApplication.created_at.desc()).all()
+    # Get filter parameters
+    district_filter = request.args.get('district', '')
+    search_filter = request.args.get('search', '')
+    
+    query = LoanApplication.query
+
+    # Apply filters if provided
+    if district_filter and district_filter != 'all':
+        query = query.filter(LoanApplication.district == district_filter)
+    
+    if search_filter:
+        query = query.filter(
+            (LoanApplication.name.ilike(f"%{search_filter}%")) |
+            (LoanApplication.cnic.ilike(f"%{search_filter}%")) |
+            (LoanApplication.purpose.ilike(f"%{search_filter}%")) |
+            (LoanApplication.district.ilike(f"%{search_filter}%")) |
+            (LoanApplication.tehsil.ilike(f"%{search_filter}%"))
+        )
+
+    records = query.order_by(LoanApplication.created_at.desc()).all()
+    
     if not records:
         flash("کوئی درخواست موجود نہیں!", "danger")
         return redirect("/dashboard")
@@ -164,9 +204,12 @@ def download_excel():
         "Created At": r.created_at.strftime("%Y-%m-%d %I:%M %p")
     } for r in records])
 
-    file_path = "loan_applications.xlsx"
-    df.to_excel(file_path, index=False)
-    return send_file(file_path, as_attachment=True)
+    # Create filename with timestamp and filters
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"loan_applications_{timestamp}.xlsx"
+    
+    df.to_excel(filename, index=False)
+    return send_file(filename, as_attachment=True)
 
 if __name__ == "__main__":
     app.run(debug=True)
