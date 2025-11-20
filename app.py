@@ -19,9 +19,8 @@ class LoanApplication(db.Model):
     name = db.Column(db.String(150), nullable=False)
     cnic = db.Column(db.String(15), nullable=False)
     address = db.Column(db.String(250), nullable=False)
-    # TEMPORARY: Make these nullable until tables are created
-    district = db.Column(db.String(50), nullable=True)
-    tehsil = db.Column(db.String(50), nullable=True)
+    district = db.Column(db.String(50), nullable=True)  # Temporary: nullable
+    tehsil = db.Column(db.String(50), nullable=True)    # Temporary: nullable
     amount = db.Column(db.Float, nullable=False)
     purpose = db.Column(db.String(50), nullable=False)
     contact = db.Column(db.String(15), nullable=False)
@@ -84,56 +83,60 @@ def dashboard():
         flash("براہ کرم لاگ ان کریں!", "warning")
         return redirect("/login")
 
-    search = request.args.get('search', '')
-    start_date = request.args.get('start_date', '')
-    end_date = request.args.get('end_date', '')
+    try:
+        search = request.args.get('search', '')
+        start_date = request.args.get('start_date', '')
+        end_date = request.args.get('end_date', '')
 
-    query = LoanApplication.query
+        query = LoanApplication.query
 
-    # 🔍 Search Filter
-    if search:
-        query = query.filter(
-            (LoanApplication.name.ilike(f"%{search}%")) |
-            (LoanApplication.cnic.ilike(f"%{search}%")) |
-            (LoanApplication.purpose.ilike(f"%{search}%")) |
-            (LoanApplication.district.ilike(f"%{search}%")) |
-            (LoanApplication.tehsil.ilike(f"%{search}%"))
+        # 🔍 Search Filter
+        if search:
+            query = query.filter(
+                (LoanApplication.name.ilike(f"%{search}%")) |
+                (LoanApplication.cnic.ilike(f"%{search}%")) |
+                (LoanApplication.purpose.ilike(f"%{search}%"))
+            )
+
+        # 📅 Date Filter
+        if start_date and end_date:
+            query = query.filter(LoanApplication.created_at.between(start_date, end_date))
+
+        records = query.order_by(LoanApplication.created_at.desc()).all()
+
+        total = len(records)
+        total_amount = sum(r.amount for r in records) if records else 0
+        avg_amount = total_amount / total if total > 0 else 0
+        
+        today_count = LoanApplication.query.filter(
+            db.func.date(LoanApplication.created_at) == datetime.utcnow().date()
+        ).count()
+
+        # 📊 Purpose-wise Data for Chart
+        purpose_data = db.session.query(
+            LoanApplication.purpose, db.func.count(LoanApplication.id)
+        ).group_by(LoanApplication.purpose).all()
+
+        purpose_labels = [p[0] for p in purpose_data]
+        purpose_counts = [p[1] for p in purpose_data]
+
+        return render_template(
+            "dashboard.html",
+            records=records,
+            total=total,
+            total_amount=total_amount,
+            avg_amount=avg_amount,
+            today_count=today_count,
+            purpose_labels=purpose_labels,
+            purpose_counts=purpose_counts,
+            search=search,
+            start_date=start_date,
+            end_date=end_date
         )
-
-    # 📅 Date Filter
-    if start_date and end_date:
-        query = query.filter(LoanApplication.created_at.between(start_date, end_date))
-
-    records = query.order_by(LoanApplication.created_at.desc()).all()
-
-    total = len(records)
-    total_amount = sum(r.amount for r in records) if records else 0
-    avg_amount = total_amount / total if total > 0 else 0
-    today_count = LoanApplication.query.filter(
-        db.func.date(LoanApplication.created_at) == datetime.utcnow().date()
-    ).count()
-
-    # 📊 Purpose-wise Data for Chart
-    purpose_data = db.session.query(
-        LoanApplication.purpose, db.func.count(LoanApplication.id)
-    ).group_by(LoanApplication.purpose).all()
-
-    purpose_labels = [p[0] for p in purpose_data]
-    purpose_counts = [p[1] for p in purpose_data]
-
-    return render_template(
-        "dashboard.html",
-        records=records,
-        total=total,
-        total_amount=total_amount,
-        avg_amount=avg_amount,
-        today_count=today_count,
-        purpose_labels=purpose_labels,
-        purpose_counts=purpose_counts,
-        search=search,
-        start_date=start_date,
-        end_date=end_date
-    )
+    
+    except Exception as e:
+        flash(f"Dashboard error: {e}", "danger")
+        return redirect("/")
 
 # ---------------- Download Excel ----------------
 @app.route("/download")
@@ -142,27 +145,32 @@ def download_excel():
         flash("براہ کرم لاگ ان کریں!", "warning")
         return redirect("/login")
 
-    records = LoanApplication.query.order_by(LoanApplication.created_at.desc()).all()
-    if not records:
-        flash("کوئی درخواست موجود نہیں!", "danger")
+    try:
+        records = LoanApplication.query.order_by(LoanApplication.created_at.desc()).all()
+        if not records:
+            flash("کوئی درخواست موجود نہیں!", "danger")
+            return redirect("/dashboard")
+
+        df = pd.DataFrame([{
+            "ID": r.id,
+            "Name": r.name,
+            "CNIC": r.cnic,
+            "Address": r.address,
+            "District": getattr(r, 'district', 'N/A'),
+            "Tehsil": getattr(r, 'tehsil', 'N/A'),
+            "Amount": r.amount,
+            "Purpose": r.purpose,
+            "Contact": r.contact,
+            "Created At": r.created_at.strftime("%Y-%m-%d %I:%M %p")
+        } for r in records])
+
+        file_path = "loan_applications.xlsx"
+        df.to_excel(file_path, index=False)
+        return send_file(file_path, as_attachment=True)
+    
+    except Exception as e:
+        flash(f"Download error: {e}", "danger")
         return redirect("/dashboard")
-
-    df = pd.DataFrame([{
-        "ID": r.id,
-        "Name": r.name,
-        "CNIC": r.cnic,
-        "Address": r.address,
-        "District": r.district or 'N/A',
-        "Tehsil": r.tehsil or 'N/A',
-        "Amount": r.amount,
-        "Purpose": r.purpose,
-        "Contact": r.contact,
-        "Created At": r.created_at.strftime("%Y-%m-%d %I:%M %p")
-    } for r in records])
-
-    file_path = "loan_applications.xlsx"
-    df.to_excel(file_path, index=False)
-    return send_file(file_path, as_attachment=True)
 
 if __name__ == "__main__":
     app.run(debug=True)
