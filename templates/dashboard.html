@@ -126,6 +126,111 @@
     }
 
     /* باقی تمام سٹائلز برقرار رکھیں */
+    .table th {
+      font-weight: 600;
+      text-align: right; 
+    }
+    .amount-badge {
+      font-size: 0.8rem;
+    }
+    .rtl-text {
+      direction: rtl;
+      text-align: right;
+    }
+    .card {
+      border-radius: 12px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08);
+      border: 1px solid #e0e0e0;
+      background: #fff;
+    }
+    .stats-card {
+      border-left: 4px solid;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      border-top: 1px solid #e0e0e0;
+      border-right: 1px solid #e0e0e0;
+      border-bottom: 1px solid #e0e0e0;
+    }
+    .bg-primary.stats-card { border-left-color: #007bff; }
+    .bg-success.stats-card { border-left-color: #28a745; }
+    .bg-warning.stats-card { border-left-color: #ffc107; }
+    .bg-info.stats-card { border-left-color: #17a2b8; }
+    
+    .bg-warning, .bg-info {
+      color: #333 !important;
+    }
+    
+    .hover-shadow:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+      transition: all 0.3s ease;
+    }
+    .district-badge {
+      background: linear-gradient(45deg, #28a745, #20c997);
+      color: white;
+      border: 1px solid #1e7e34;
+    }
+    .tehsil-badge {
+      background: linear-gradient(45deg, #17a2b8, #6f42c1);
+      color: white;
+      border: 1px solid #138496;
+    }
+    .district-card {
+      cursor: pointer;
+      transition: all 0.3s ease;
+      min-width: 140px;
+      border: 2px solid transparent;
+      color: white !important;
+      border-radius: 10px;
+      box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+    }
+    .district-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+      border: 2px solid rgba(255,255,255,0.5);
+    }
+    .district-card.active {
+      border: 3px solid #fff;
+      box-shadow: 0 0 20px rgba(255,255,255,0.5), 0 4px 8px rgba(0,0,0,0.2);
+    }
+    
+    /* District Card Colors */
+    .district-all {
+      background: linear-gradient(135deg, #4a5fc9, #5a3780);
+      border: 1px solid #3f51b5;
+    }
+    .district-sargodha {
+      background: linear-gradient(135deg, #c2185b, #b71c1c);
+      border: 1px solid #ad1457;
+    }
+    .district-chiniot {
+      background: linear-gradient(135deg, #1565c0, #00838f);
+      border: 1px solid #1565c0;
+    }
+    .district-hafizabad {
+      background: linear-gradient(135deg, #2e7d32, #00695c);
+      border: 1px solid #2e7d32;
+    }
+    .district-other {
+      background: linear-gradient(135deg, #ef6c00, #c62828);
+      border: 1px solid #ef6c00;
+    }
+    
+    /* Ensure text is white and visible */
+    .district-card .card-title,
+    .district-card h4,
+    .district-card small {
+      color: white !important;
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+      font-weight: 600;
+    }
+    
+    .district-card h4 {
+      font-weight: 700;
+      font-size: 1.8rem;
+    }
+
+    /* باقی سٹائلز برقرار رکھیں */
   </style>
 </head>
 
@@ -370,7 +475,7 @@
         ctx.font = 'bold 14px Arial';
         ctx.fillStyle = 'white';
         
-        chart.data.datasets.forEach((dataset, datasetIndex) {
+        chart.data.datasets.forEach((dataset, datasetIndex) => {
           const meta = chart.getDatasetMeta(datasetIndex);
           meta.data.forEach((bar, index) => {
             const data = dataset.data[index];
@@ -471,10 +576,11 @@
             legend: {
               display: false
             },
+            // چارٹ کے اندر والا ٹائٹل ہٹا دیا
             tooltip: {
               callbacks: {
                 label: function(context) {
-                  return `${context.parsed.y}`;
+                  return `${context.dataset.label}: ${context.parsed.y}`;
                 }
               }
             }
@@ -546,12 +652,10 @@
                 generateLabels: function(chart) {
                   const data = chart.data;
                   if (data.labels.length && data.datasets.length) {
-                    const total = data.datasets[0].data.reduce((a, b) => a + b, 0);
                     return data.labels.map((label, i) => {
                       const value = data.datasets[0].data[i];
-                      const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
                       return {
-                        text: `${label}`,
+                        text: `${label} (${value})`,
                         fillStyle: data.datasets[0].backgroundColor[i],
                         strokeStyle: data.datasets[0].borderColor,
                         lineWidth: data.datasets[0].borderWidth,
@@ -564,13 +668,15 @@
                 }
               }
             },
+            // چارٹ کے اندر والا ٹائٹل ہٹا دیا
             tooltip: {
               callbacks: {
                 label: function(context) {
+                  const label = context.label || '';
                   const value = context.parsed;
                   const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                  const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
-                  return `${value} (${percentage}%)`;
+                  const percentage = Math.round((value / total) * 100);
+                  return `${label}: ${value} (${percentage}%)`;
                 }
               }
             }
