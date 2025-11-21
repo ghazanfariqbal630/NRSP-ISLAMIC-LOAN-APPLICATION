@@ -81,14 +81,14 @@
       padding: 0;
     }
 
-    /* چارٹ ہیڈنگ کا نیا سٹائل - سرخ رنگ */
+    /* چارٹ ہیڈنگ کا نیا سٹائل - سفید رنگ */
     .chart-heading {
-      color: #dc3545 !important;
+      color: white !important;
       text-align: center;
       font-weight: 700;
       margin-bottom: 15px;
       font-size: 18px;
-      text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
     }
 
     /* Toggle Button Styles */
@@ -576,8 +576,10 @@
             legend: {
               display: false
             },
-            // چارٹ کے اندر والا ٹائٹل ہٹا دیا
             tooltip: {
+              backgroundColor: 'rgba(0, 0, 0, 0.8)',
+              titleColor: 'white',
+              bodyColor: 'white',
               callbacks: {
                 label: function(context) {
                   return `${context.dataset.label}: ${context.parsed.y}`;
@@ -590,7 +592,8 @@
               ticks: {
                 color: 'white',
                 font: {
-                  size: 12
+                  size: 12,
+                  weight: 'bold'
                 }
               },
               grid: {
@@ -602,7 +605,8 @@
               ticks: {
                 color: 'white',
                 font: {
-                  size: 12
+                  size: 12,
+                  weight: 'bold'
                 },
                 stepSize: 1
               },
@@ -644,32 +648,18 @@
                 color: 'white',
                 font: {
                   size: 12,
-                  family: 'Arial'
+                  family: 'Arial',
+                  weight: 'bold'
                 },
                 padding: 20,
                 usePointStyle: true,
-                pointStyle: 'circle',
-                generateLabels: function(chart) {
-                  const data = chart.data;
-                  if (data.labels.length && data.datasets.length) {
-                    return data.labels.map((label, i) => {
-                      const value = data.datasets[0].data[i];
-                      return {
-                        text: `${label} (${value})`,
-                        fillStyle: data.datasets[0].backgroundColor[i],
-                        strokeStyle: data.datasets[0].borderColor,
-                        lineWidth: data.datasets[0].borderWidth,
-                        hidden: isNaN(data.datasets[0].data[i]) || chart.getDatasetMeta(0).data[i].hidden,
-                        index: i
-                      };
-                    });
-                  }
-                  return [];
-                }
+                pointStyle: 'circle'
               }
             },
-            // چارٹ کے اندر والا ٹائٹل ہٹا دیا
             tooltip: {
+              backgroundColor: 'rgba(0, 0, 0, 0.8)',
+              titleColor: 'white',
+              bodyColor: 'white',
               callbacks: {
                 label: function(context) {
                   const label = context.label || '';
