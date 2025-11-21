@@ -57,15 +57,15 @@
       padding: 0 20px;
     }
 
-    /* چارٹ کا نیا سٹائل */
+    /* چارٹ کا نیا سٹائل - ہلکا بیک گراؤنڈ */
     .chart-container {
       position: relative;
       height: 300px;
       margin-bottom: 20px;
-      background: linear-gradient(135deg, #2c3e50, #34495e);
+      background: linear-gradient(135deg, #4a6572, #344955);
       border-radius: 12px;
       padding: 20px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
       transition: all 0.3s ease;
     }
 
@@ -81,13 +81,14 @@
       padding: 0;
     }
 
-    .chart-title {
-      color: white !important;
+    /* چارٹ ہیڈنگ کا نیا سٹائل - سرخ رنگ */
+    .chart-heading {
+      color: #dc3545 !important;
       text-align: center;
       font-weight: 700;
       margin-bottom: 15px;
       font-size: 18px;
-      text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
     }
 
     /* Toggle Button Styles */
@@ -369,7 +370,7 @@
           <div class="col-md-6 mb-3">
             <div class="card border-0">
               <div class="card-body p-0">
-                <h5 class="chart-title">ضلع کے لحاظ سے درخواستیں</h5>
+                <h5 class="chart-heading">ضلع کے لحاظ سے درخواستیں</h5>
                 <div class="chart-container">
                   <canvas id="districtChart"></canvas>
                 </div>
@@ -379,7 +380,7 @@
           <div class="col-md-6 mb-3">
             <div class="card border-0">
               <div class="card-body p-0">
-                <h5 class="chart-title">مقصد کے لحاظ سے درخواستیں</h5>
+                <h5 class="chart-heading">مقصد کے لحاظ سے درخواستیں</h5>
                 <div class="chart-container">
                   <canvas id="purposeChart"></canvas>
                 </div>
@@ -575,15 +576,7 @@
             legend: {
               display: false
             },
-            title: {
-              display: true,
-              text: 'ضلع کے لحاظ سے درخواستیں',
-              color: 'white',
-              font: {
-                size: 16,
-                weight: 'bold'
-              }
-            },
+            // چارٹ کے اندر والا ٹائٹل ہٹا دیا
             tooltip: {
               callbacks: {
                 label: function(context) {
@@ -621,7 +614,7 @@
         }
       });
 
-      // Purpose Chart - Using datalabels plugin
+      // Purpose Chart
       const purposeCtx = document.getElementById('purposeChart').getContext('2d');
       const purposeData = calculatePurposeData();
       
@@ -675,15 +668,7 @@
                 }
               }
             },
-            title: {
-              display: true,
-              text: 'مقصد کے لحاظ سے درخواستیں',
-              color: 'white',
-              font: {
-                size: 16,
-                weight: 'bold'
-              }
-            },
+            // چارٹ کے اندر والا ٹائٹل ہٹا دیا
             tooltip: {
               callbacks: {
                 label: function(context) {
